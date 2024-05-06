@@ -1,18 +1,8 @@
 #ifndef XPI_UTILITIES_HPP_
 #define XPI_UTILITIES_HPP_
 
-#include <Windows.h>
-#include <intrin.h>
-#pragma  intrinsic(_ReturnAddress)
-
 #include <vector>
 #include <string>
-
-#include <boost/foreach.hpp>
-
-#ifndef foreach
-#define foreach BOOST_FOREACH
-#endif
 
 // window messages
 #define WM_INJECTREADY  (WM_USER + 10)
@@ -31,15 +21,13 @@
 
 #define NB_ERR  0xFF
 
-BOOL StringToBuffer(__in std::wstring wstr, __inout std::vector<BYTE>* pvbBuffer);
-BOOL StringToBuffer(__in std::string str, __inout std::vector<BYTE>* pvbBuffer);
-VOID StringToWString(__in std::string str, __inout std::wstring &wstr);
+BOOL StringToBuffer(__in const std::wstring &wstr, __inout std::vector<BYTE>* pvbBuffer);
+BOOL StringToBuffer(__in const std::string &str, __inout std::vector<BYTE>* pvbBuffer);
+BOOL StringToWString(__in const std::string &str, __inout std::wstring &wstr);
 
 BOOL IsOpcodeBlocked(__in WORD wOpcode);
 
 HANDLE AddFontFromResource(__in HMODULE hModule, __in LPCWSTR lpcwszName);
-
-VOID __MessageBox(_In_opt_ LPCWSTR lpText, ...);
 
 // edit box filter look-up table
 static const BOOL s_cbPlainMask[0x100] =
@@ -80,13 +68,12 @@ static const BOOL s_cbPlainMask[0x100] =
 
 INT MessageBoxIcon(__in HWND hwndOwner, __in LPCWSTR lpcwszText, __in LPCWSTR lpcwszCaption, __in UINT uType, __in HINSTANCE hInstance, __in LPCWSTR lpcwszIcon);
 
-PVOID DumpMapleStory(__in PVOID pModuleBase, __in DWORD dwModuleSize);
-VOID FreeMapleStoryDump(__in PVOID pBuffer);
-
 template <class T>
 inline T* GetClassInstance(__in HWND hWnd)
 {
 	return reinterpret_cast<T*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
 }
+
+extern HWND GetXPIWindow();
 
 #endif // XPI_UTILITIES_HPP_

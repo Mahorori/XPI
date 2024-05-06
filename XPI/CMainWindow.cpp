@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "CMainWindow.hpp"
 
 #include <windowsx.h>
@@ -278,7 +280,7 @@ BOOL CMainWindow::OnCreate(__in HINSTANCE hInstance)
 
 	INT iCount = 0;
 
-	foreach(const TAB_INFO& i, Tabs)
+	for (const TAB_INFO& i : Tabs)
 	{
 		HWND hWnd = CreateDialogParamW(m_pXPIGUI->hInstance, i.lpwszTemplate, m_hDialog, i.DlgProc, (LPARAM)m_pXPIGUI);
 		if (hWnd != NULL)
@@ -375,7 +377,7 @@ VOID CMainWindow::NotifyErrorUI()
 
 VOID CMainWindow::RelayToChildren(__in UINT uMessage, __in WPARAM wParam, __in LPARAM lParam)
 {
-	foreach(HWND hWnd, m_vhTabs)
+	for (HWND hWnd : m_vhTabs)
 		PostMessage(hWnd, uMessage, wParam, lParam);
 }
 
@@ -386,7 +388,7 @@ VOID CMainWindow::OnSize(__in WORD wWidth, __in WORD wHeight)
 	SetWindowPos(GetDlgItem(m_hDialog, IDC_CLEAR), NULL, wWidth - UI_PAUSE_WIDTH - UI_PAUSE_PADDING - UI_CLEAR_WIDTH - UI_CLEAR_PADDING, UI_CLEAR_PADDING, UI_CLEAR_WIDTH, UI_CLEAR_HEIGHT, 0);
 
 	// resize every child window
-	foreach(HWND hWnd, m_vhTabs)
+	for (HWND hWnd : m_vhTabs)
 		SetWindowPos(hWnd, NULL, UI_PANE_X, UI_PANE_Y, wWidth - UI_PANE_PAD_RIGHT - UI_PANE_X, wHeight - UI_PANE_PAD_BOTTOM - UI_PANE_Y, 0);
 }
 
@@ -400,7 +402,7 @@ VOID CMainWindow::OnTabNotify(__in LPNMHDR lpnmhdr)
 	if (iSelectedTab > -1)
 	{
 		// hide every tab window
-		foreach(HWND hWnd, m_vhTabs)
+		for (HWND hWnd : m_vhTabs)
 			ShowWindow(hWnd, SW_HIDE);
 		// show the selected tab window
 		ShowWindow(m_vhTabs.at(iSelectedTab), SW_SHOW);
@@ -496,9 +498,7 @@ VOID CMainWindow::OnClearNotify(__in WPARAM wParam)
 		pInstances->Clear();
 
 		// create a temporary pool, so there's never a moment where the packets are being added to a NULL pool
-		boost::object_pool<CMaplePacket>* pTempPool = new boost::object_pool<CMaplePacket>, *pOldPool = pPacketPool;
-		pPacketPool = pTempPool;
-		delete pOldPool;
+		lPacketPool.clear(); // ????
 
 		lPacketCount = 0;
 

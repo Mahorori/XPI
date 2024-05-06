@@ -1,69 +1,71 @@
-#include "FormattedInject.hpp"
+#include "stdafx.h"
 
+#include "FormattedInject.hpp"
 #include "CInstanceManager.hpp"
 #include "CMaplePacket.hpp"
+#include "COutPacket.hpp"
+#include "extvars.hpp"
 
 namespace FormattedInject
 {
-	VOID DoInitPacket(COutPacket* pckt, BOOL bHidden, WORD w)
+	VOID DoInitPacket(COutPacket *oPacket, BOOL bHidden, WORD n)
 	{
 		if (!bHidden)
-			_COutPacket(pckt, 0, w);
+			COutPacket_constructor(oPacket, n);
 		else
-			COutPacket__constructor(pckt, 0, w);
+			COutPacket_constructor(oPacket, n);
 	}
 
-	VOID DoEncode1(COutPacket* pckt, BOOL bHidden, BYTE b)
+	VOID DoEncode1(COutPacket *oPacket, BOOL bHidden, BYTE n)
 	{
 		if (!bHidden)
-			Encode1(pckt, 0, b);
+			Encode1_Hook(oPacket, 0, n);
 		else
-			_Encode1(pckt, 0, b);
+			oPacket->Encode1(n);
 	}
 
-	VOID DoEncode2(COutPacket* pckt, BOOL bHidden, WORD w)
+	VOID DoEncode2(COutPacket *oPacket, BOOL bHidden, WORD n)
 	{
 		if (!bHidden)
-			Encode2(pckt, 0, w);
+			Encode2_Hook(oPacket, 0, n);
 		else
-			_Encode2(pckt, 0, w);
+			oPacket->Encode2(n);
 	}
 
-	VOID DoEncode4(COutPacket* pckt, BOOL bHidden, DWORD dw)
+	VOID DoEncode4(COutPacket *oPacket, BOOL bHidden, DWORD n)
 	{
 		if (!bHidden)
-			Encode4(pckt, 0, dw);
+			Encode4_Hook(oPacket, 0, n);
 		else
-			_Encode4(pckt, 0, dw);
+			oPacket->Encode4(n);
 	}
 
-	VOID DoEncode8(COutPacket* pckt, BOOL bHidden, ULONGLONG ull)
+	VOID DoEncode8(COutPacket *oPacket, BOOL bHidden, ULONGLONG n)
 	{
 		if (!bHidden)
-			Encode8(pckt, 0, ull);
+			Encode8_Hook(oPacket, 0, n);
 		else
-			_Encode8(pckt, 0, ull);
+			oPacket->Encode8(n);
 	}
 
-	VOID DoEncodeString(COutPacket* pckt, BOOL bHidden, std::string& str)
+	VOID DoEncodeString(COutPacket *oPacket, BOOL bHidden, std::string& s)
 	{
 		if (!bHidden)
 		{
-			CMaplePacket* p = pInstances->Find(pckt);
-
-			if (p != NULL)
-				p->AddString(str.c_str(), 0);
+			auto pckt = pInstances->Find(oPacket);
+			if (pckt != NULL)
+				pckt->AddString(s.c_str(), 0);
 		}
 
-		_Encode2(pckt, 0, str.length());
-		_EncodeBuffer(pckt, 0, (LPBYTE)str.c_str(), str.length());
+		oPacket->Encode2(s.length());
+		oPacket->EncodeBuffer((LPBYTE)s.c_str(), s.length());
 	}
 
-	VOID DoEncodeBuffer(COutPacket* pckt, BOOL bHidden, std::vector<BYTE>& vb)
+	VOID DoEncodeBuffer(COutPacket *oPacket, BOOL bHidden, std::vector<BYTE>& vb)
 	{
 		if (!bHidden)
-			EncodeBuffer(pckt, 0, &vb[0], vb.size());
+			EncodeBuffer_Hook(oPacket, 0, &vb[0], vb.size());
 		else
-			_EncodeBuffer(pckt, 0, &vb[0], vb.size());
+			oPacket->EncodeBuffer(&vb[0], vb.size());
 	}
 }

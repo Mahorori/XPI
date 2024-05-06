@@ -1,12 +1,11 @@
+#include "stdafx.h"
+
 #include "CLog.hpp"
 
 #include <psapi.h>
-
 #define STRSAFE_NO_DEPRECATE
 #include <strsafe.h>
-
 #include <stdexcept>
-
 #pragma  comment(lib, "psapi")
 
 #define _SafeStringFormatW(buff, fmt, ...) SUCCEEDED(StringCchPrintfW(buff, _countof(buff), fmt, __VA_ARGS__))

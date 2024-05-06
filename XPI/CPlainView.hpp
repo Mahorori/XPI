@@ -1,8 +1,6 @@
 #ifndef CPLAIN_VIEW_HPP_
 #define CPLAIN_VIEW_HPP_
 
-#include <windows.h>
-
 #include "CMainWindow.hpp"
 #include "CMaplePacket.hpp"
 

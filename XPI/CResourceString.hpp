@@ -1,8 +1,6 @@
 #ifndef CRESOURCE_STRING_HPP_
 #define CRESOURCE_STRING_HPP_
 
-#include <windows.h>
-
 #include <string>
 
 class CResourceString

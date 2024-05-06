@@ -192,9 +192,6 @@
     <ClInclude Include="CLog.hpp">
       <Filter>Logging Support\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MapleHooks.h">
-      <Filter>MapleStory Hooks\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CMaplePacket.hpp">
       <Filter>Packet Support\Header Files</Filter>
     </ClInclude>
@@ -228,9 +225,6 @@
     <ClInclude Include="extvars.hpp">
       <Filter>XPI\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FindPattern.h">
-      <Filter>XPI\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>XPI\Header Files</Filter>
     </ClInclude>
@@ -242,6 +236,24 @@
     </ClInclude>
     <ClInclude Include="XPIUtilities.hpp">
       <Filter>XPI\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CClientSocket.hpp">
+      <Filter>MapleStory Hooks\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>XPI\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>XPI\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CInPacket.hpp">
+      <Filter>MapleStory Hooks\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="COutPacket.hpp">
+      <Filter>MapleStory Hooks\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MapleHooks.hpp">
+      <Filter>MapleStory Hooks\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -259,9 +271,6 @@
     </ClCompile>
     <ClCompile Include="CLog.cpp">
       <Filter>Logging Support\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MapleHooks.cpp">
-      <Filter>MapleStory Hooks\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CMaplePacket.cpp">
       <Filter>Packet Support\Source Files</Filter>
@@ -296,9 +305,6 @@
     <ClCompile Include="extvars.cpp">
       <Filter>XPI\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FindPattern.cpp">
-      <Filter>XPI\Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="XPI.cpp">
       <Filter>XPI\Source Files</Filter>
     </ClCompile>
@@ -307,6 +313,21 @@
     </ClCompile>
     <ClCompile Include="XPIUtilities.cpp">
       <Filter>XPI\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CClientSocket.cpp">
+      <Filter>MapleStory Hooks\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>XPI\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CInPacket.cpp">
+      <Filter>MapleStory Hooks\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="COutPacket.cpp">
+      <Filter>MapleStory Hooks\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MapleHooks.cpp">
+      <Filter>MapleStory Hooks\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

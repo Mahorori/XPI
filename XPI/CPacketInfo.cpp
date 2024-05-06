@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "CPacketInfo.hpp"
 
 #include <windowsx.h>
@@ -5,6 +7,7 @@
 #include <strsafe.h>
 #include <psapi.h>
 
+#include "CMaplePacket.hpp"
 #include "CResourceString.hpp"
 #include "XPIUtilities.hpp"
 #include "extvars.hpp"
@@ -98,11 +101,11 @@ BOOL CPacketInfo::OnCreate()
 	// caller text
 	if ((m_pPacket->GetState() & PACKET_INJECTED) == 0)
 	{
-#ifdef _DEBUG
+//#ifdef _DEBUG
 		StringCchPrintfW(wszTemp, _countof(wszTemp), L"0x%p", m_pPacket->GetCallerTime()->lpCaller);
-#else
-		StringCchCopyW(wszTemp, _countof(wszTemp), L"MapleStory");
-#endif
+//#else
+	//	StringCchCopyW(wszTemp, _countof(wszTemp), L"MapleStory");
+//#endif
 		wstrTemp = wszTemp;
 	}
 	else
@@ -114,7 +117,7 @@ BOOL CPacketInfo::OnCreate()
 
 	// edit control
 	wstrTemp.clear();
-	foreach(BYTE b, *m_pPacket->GetData())
+	for (BYTE b : *m_pPacket->GetData())
 	{
 		StringCchPrintfW(wszTemp, _countof(wszTemp), L"%02X ", b);
 		wstrTemp += wszTemp;
@@ -233,11 +236,11 @@ BOOL CPacketInfo::InitializeListview()
 		}
 		else
 		{
-#ifdef _DEBUG
+//#ifdef _DEBUG
 			StringCchPrintfW(wszTemp, _countof(wszTemp), L"0x%p", pMember->CallerTime.lpCaller);
-#else
-			StringCchCopyW(wszTemp, _countof(wszTemp), L"MapleStory");
-#endif
+//#else
+	//		StringCchCopyW(wszTemp, _countof(wszTemp), L"MapleStory");
+//#endif
 			lvi.pszText = wszTemp;
 		}
 
@@ -281,7 +284,7 @@ BOOL CPacketInfo::InitializeListview()
 		case MEMBER_BUFFER:
 			wstrTemp = L"";
 			lvi.pszText = L"BUFFER";
-			foreach(BYTE b, *pMember->data.buff)
+			for (BYTE b : *pMember->data.buff)
 			{
 				StringCchPrintfW(wszTemp, _countof(wszTemp), L"%02X ", b);
 				wstrTemp += wszTemp;
@@ -476,11 +479,11 @@ VOID CPacketInfo::CopyMember(__in BOOL bHeaders)
 			}
 			else
 			{
-#ifdef _DEBUG
+//#ifdef _DEBUG
 				StringCchPrintfA(szTemp, _countof(szTemp), "0x%p", pMember->CallerTime.lpCaller);
-#else
-				StringCchCopyA(szTemp, _countof(szTemp), "MapleStory");
-#endif
+//#else
+	//			StringCchCopyA(szTemp, _countof(szTemp), "MapleStory");
+//#endif
 			}
 
 			strBuffer += szTemp;
@@ -556,7 +559,7 @@ VOID CPacketInfo::CopyMember(__in BOOL bHeaders)
 			break;
 
 		case MEMBER_BUFFER:
-			foreach(BYTE b, *pMember->data.buff)
+			for (BYTE b : *pMember->data.buff)
 			{
 				StringCchPrintfA(szTemp, _countof(szTemp), "%02X ", b);
 				strBuffer += szTemp;
@@ -741,7 +744,7 @@ VOID CPacketInfo::CallerDoubleClicked()
 
 	if ((m_pPacket->GetState() & PACKET_INJECTED) == 0)
 	{
-#ifdef _DEBUG
+//#ifdef _DEBUG
 		if (m_pPacket->GetWParam() & CMPW_CALLER)
 		{
 			HMODULE hModule;
@@ -754,9 +757,9 @@ VOID CPacketInfo::CallerDoubleClicked()
 				}
 		}
 		StringCchPrintfW(wszTemp, _countof(wszTemp), L"0x%p", m_pPacket->GetCallerTime()->lpCaller);
-#else
-		StringCchCopyW(wszTemp, _countof(wszTemp), L"MapleStory");
-#endif
+//#else
+	//	StringCchCopyW(wszTemp, _countof(wszTemp), L"MapleStory");
+//#endif
 		wstrCaller += wszTemp;
 	}
 	else

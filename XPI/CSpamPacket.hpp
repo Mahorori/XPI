@@ -1,14 +1,14 @@
 #ifndef CSPAM_PACKET_HPP_
 #define CSPAM_PACKET_HPP_
 
-#include <windows.h>
-
-#include "CMainWindow.hpp"
 #include "CMaplePacket.hpp"
-#include "MapleHooks.h"
+#include "CMainWindow.hpp"
 
 #define WM_DONESPAMMING     (WM_USER + 150)
 #define WM_UPDATESPAMSTATUS (WM_USER + 151)
+
+struct CInPacket;
+struct COutPacket;
 
 // initializer structure (passed as LPARAM)
 typedef struct _SPAMPACKET
@@ -22,14 +22,14 @@ typedef struct _SPAMPACKET
 // initializer structure for thread (passed as LPARAM)
 typedef struct _SPAMPACKETTHREAD
 {
-	HWND              hDialog;
-	ULONG             ulRepeat;
-	ULONG             ulInterval;
-	BOOL              bShowPacket;
-	PACKET_DIRECTION  Direction;
-	PULONGLONG        pullCount;
-	COutPacket*       oPacket;
-	CInPacket*        inPacket;
+	HWND				hDialog;
+	ULONG				ulRepeat;
+	ULONG				ulInterval;
+	BOOL				bShowPacket;
+	PACKET_DIRECTION	Direction;
+	PULONGLONG			pullCount;
+	CInPacket			*iPacket;
+	COutPacket			*oPacket;
 } SPAMPACKETTHREAD, far *LPSPAMPACKETTHREAD, near *PSPAMPACKETTHREAD;
 
 class CSpamPacket
@@ -50,9 +50,9 @@ private:
 	// counter for spammed packets
 	ULONGLONG         m_ullCount;
 	// packet structure for outgoing spamming
-	COutPacket*       m_oPacket;
+	COutPacket *m_oPacket;
 	// packet structure for incoming spamming
-	CInPacket*        m_inPacket;
+	CInPacket *m_iPacket;
 	// temporary holder for the transferred string
 	LPCWSTR           m_lpcwszBuffer;
 	// status bar indices

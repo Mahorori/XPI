@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "CMainSettings.hpp"
 
 #include <uxtheme.h>

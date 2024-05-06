@@ -1,18 +1,21 @@
+#include "stdafx.h"
+
 #include "extvars.hpp"
 
-CResourceString*  pStrings      = NULL;
+CResourceString *pStrings = NULL;
 #ifdef _DEBUG
-CLog*             pLog          = NULL;
+CLog *pLog = NULL;
 #endif
-CInstanceManager* pInstances    = NULL;
-CHookManager*     pHookManager  = NULL;
-OPCODE_MAP*       pOpcodeInfo   = NULL;
-CClientSocket*    pClientSocket = NULL;
-CWorldSocket*	  pWorldSocket	= NULL;
-BOOL              bLogging      = TRUE;
-BOOL              bAutoscroll   = FALSE;
-PVOID             pMapleDump    = NULL;
-PVOID             pMapleBase    = NULL;
-DWORD             dwMapleSize   = 0;
+CInstanceManager *pInstances = NULL;
+CHookManager *pHookManager	= NULL;
+OPCODE_MAP *pOpcodeInfo	= NULL;
+CChatSocket *pChatSocket	= NULL;
+
+BOOL bLogging = TRUE;
+BOOL bAutoscroll = FALSE;
+PVOID pMapleBase = NULL;
+DWORD dwMapleSize = 0;
+WORD uSeqBase = 83;
+
 /***/
-boost::object_pool<CMaplePacket>* pPacketPool = NULL;
+std::list<std::shared_ptr<CMaplePacket>> lPacketPool;

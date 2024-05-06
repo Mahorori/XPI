@@ -1,10 +1,7 @@
 #ifndef CMAIN_SETTINGS_HPP_
 #define CMAIN_SETTINGS_HPP_
 
-#include <windows.h>
-
 #include <map>
-
 #include "CMainWindow.hpp"
 
 typedef std::map<HTREEITEM, HWND> TREEITEM_MAP;

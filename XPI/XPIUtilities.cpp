@@ -1,8 +1,10 @@
+#include "stdafx.h"
+
 #include "XPIUtilities.hpp"
 
-#include <boost/scoped_array.hpp>
-
 #include "extvars.hpp"
+#include <tchar.h>
+#include <string>
 
 // keeping it in this file due to the static declaration ensuring
 // it's only within the scope of this file
@@ -42,7 +44,7 @@ static const BYTE s_cbHexCharacterLUT[0x100] =
 	NB_ERR, NB_ERR, NB_ERR, NB_ERR, NB_ERR, NB_ERR, NB_ERR, NB_ERR  // 0xFF
 };
 
-BOOL StringToBuffer(__in std::wstring wstr, __inout std::vector<BYTE>* pvbBuffer)
+BOOL StringToBuffer(__in const std::wstring &wstr, __inout std::vector<BYTE>* pvbBuffer)
 {
 	BYTE bN1, bN2;
 
@@ -73,7 +75,7 @@ BOOL StringToBuffer(__in std::wstring wstr, __inout std::vector<BYTE>* pvbBuffer
 	return TRUE;
 }
 
-BOOL StringToBuffer(__in std::string str, __inout std::vector<BYTE>* pvbBuffer)
+BOOL StringToBuffer(__in const std::string &str, __inout std::vector<BYTE>* pvbBuffer)
 {
 	INT iLength;
 
@@ -81,12 +83,11 @@ BOOL StringToBuffer(__in std::string str, __inout std::vector<BYTE>* pvbBuffer)
 	if (iLength == 0)
 		return FALSE;
 
-	boost::scoped_array<WCHAR> wszBuffer(new WCHAR[iLength]);
-
-	if (MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), wszBuffer.get(), iLength) == 0)
+	std::wstring wstr(iLength, 0);
+	if (MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), &wstr[0], iLength) == 0)
 		return FALSE;
 
-	return StringToBuffer(wszBuffer.get(), pvbBuffer);
+	return StringToBuffer(wstr, pvbBuffer);
 }
 
 BOOL IsOpcodeBlocked(__in WORD wOpcode)
@@ -135,64 +136,40 @@ INT MessageBoxIcon(__in HWND hwndOwner, __in LPCWSTR lpcwszText, __in LPCWSTR lp
 	return MessageBoxIndirect(&mbp);
 }
 
-PVOID DumpMapleStory(__in PVOID pModuleBase, __in DWORD dwModuleSize)
+BOOL StringToWString(__in const std::string &str, __inout std::wstring &wstr)
 {
-	HANDLE hHeap = GetProcessHeap();
-	if (hHeap == NULL)
-		return NULL;
+	INT nLength;
 
-	PVOID pBuffer = HeapAlloc(hHeap, 0, dwModuleSize);
-	if (pBuffer == NULL)
-		return NULL;
+	nLength = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, (wchar_t*)NULL, 0);
+	if (nLength == 0)
+		return FALSE;
 
-	memcpy(pBuffer, pModuleBase, dwModuleSize);
+	std::wstring tempwstr(nLength, 0);
+	if (MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &tempwstr[0], nLength) == 0)
+		return FALSE;
 
-	return pBuffer;
+	wstr = tempwstr;
+
+	return TRUE;
 }
 
-VOID FreeMapleStoryDump(__in PVOID pBuffer)
+HWND GetXPIWindow()
 {
-	HANDLE hHeap = GetProcessHeap();
-	if (hHeap == NULL)
-		return;
+	TCHAR szBuffer[MAX_PATH];
+	DWORD dwProcessId;
 
-	HeapFree(hHeap, 0, pBuffer);
-}
+	for (HWND hWnd = GetTopWindow(NULL); hWnd != NULL; hWnd = GetNextWindow(hWnd, GW_HWNDNEXT))
+	{
+		GetWindowThreadProcessId(hWnd, &dwProcessId);
 
-/*
-stringをwstringへ変換する
-*/
-VOID StringToWString(__in std::string str, __inout std::wstring &wstr)
-{
-	// SJIS → wstring
-	int iBufferSize = MultiByteToWideChar(CP_ACP, 0, str.c_str()
-		, -1, (wchar_t*)NULL, 0);
+		if (dwProcessId != GetCurrentProcessId())
+			continue;
 
-	// バッファの取得
-	wchar_t* cpUCS2 = new wchar_t[iBufferSize];
+		if (!GetWindowText(hWnd, szBuffer, MAX_PATH))
+			continue;
 
-	// SJIS → wstring
-	MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, cpUCS2
-		, iBufferSize);
-
-	// stringの生成
-	wstr = std::wstring(cpUCS2, cpUCS2 + iBufferSize - 1);
-
-	// バッファの破棄
-	delete[] cpUCS2;
-}
-
-VOID __MessageBox(_In_opt_ LPCWSTR lpText, ...)
-{
-	if (lpText == NULL)
-		return;
-
-	WCHAR wchar[256];
-
-	va_list	argp;
-	va_start(argp, lpText);
-	wvsprintf(wchar, lpText, argp);
-	va_end(argp);
-
-	MessageBox(NULL, wchar, L"DebugMessage", MB_OK);
+		if (!_tcscmp(szBuffer, _T("XPI")))
+			return hWnd;
+	}
+	return NULL;
 }

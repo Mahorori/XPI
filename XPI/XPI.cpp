@@ -1,11 +1,10 @@
+#include "stdafx.h"
+
 #include "XPI.hpp"
 
-#include <Windows.h>
 #include <DbgHelp.h>
 #include <Psapi.h>
-
-#include "FindPattern.h"
-#include "MapleHooks.h"
+#include "MapleHooks.hpp"
 #include "CLog.hpp"
 #include "CInstanceManager.hpp"
 #include "CHookManager.hpp"
@@ -19,12 +18,14 @@
 #pragma  comment(lib, "dbghelp")
 #pragma  comment(lib, "psapi")
 
-_Success_(return) BOOL GetModuleSize(__in HMODULE hModule, __out LPVOID* lplpBase, __out LPDWORD lpdwSize)
+_Success_(return) BOOL GetModuleSize(__in HMODULE hModule, __out LPVOID *lplpBase, __out LPDWORD lpdwSize)
 {
+	MODULEINFO  ModuleInfo;
+	PIMAGE_NT_HEADERS pImageNtHeaders;
+
 	if (hModule == GetModuleHandle(NULL))
 	{
-		PIMAGE_NT_HEADERS pImageNtHeaders = ImageNtHeader((PVOID)hModule);
-
+		pImageNtHeaders = ImageNtHeader((PVOID)hModule);
 		if (pImageNtHeaders == NULL)
 			return FALSE;
 
@@ -33,8 +34,6 @@ _Success_(return) BOOL GetModuleSize(__in HMODULE hModule, __out LPVOID* lplpBas
 	}
 	else
 	{
-		MODULEINFO  ModuleInfo;
-
 		if (!GetModuleInformation(GetCurrentProcess(), hModule, &ModuleInfo, sizeof(MODULEINFO)))
 			return FALSE;
 
@@ -47,56 +46,22 @@ _Success_(return) BOOL GetModuleSize(__in HMODULE hModule, __out LPVOID* lplpBas
 
 BOOL XPIAPI LocateFunctionSignatures(__in PVOID pBase, __in DWORD dwSize)
 {
+	PVOID pTarget;
+
 #ifdef _DEBUG
 	pLog->Write(L"Searching for function signatures...");
 #endif
 
-	foreach(const MAPLE_HOOK& i, MapleHooks)
+	for (const MAPLE_HOOK &i : MapleHooks)
 	{
-		PVOID pTarget = FindPatternW(pBase, dwSize, i.Function.lpcwszSignature);
-
-		if (pTarget != NULL)
-		{
-			if (i.Function.OffsetType == OFF_ADD)
-				pTarget = (PVOID)((ULONG_PTR)pTarget + i.Function.uOffset);
-			else if (i.Function.OffsetType == OFF_SUB)
-				pTarget = (PVOID)((ULONG_PTR)pTarget - i.Function.uOffset);
-#ifdef _DEBUG
-			pLog->Write(LOG_WF_DEBUG, L"%s = 0x%p.", i.Function.lpcwszName, pTarget);
-#endif
-			*(PVOID*)i.Function.pTarget = pTarget;
-		}
-		else
-		{
-#ifdef _DEBUG
-			pLog->Write(LOG_WF_ERROR, L"Couldn't find %s, aborting!", i.Function.lpcwszName);
-#endif
-			return FALSE;
-		}
+		pTarget = i.Function.pAddress;
+		*(PVOID*)i.Function.pTarget = pTarget;
 	}
 
-	foreach(const MAPLE_FUNCTION& i, MapleFunctions)
+	for (const MAPLE_FUNCTION &i : MapleFunctions)
 	{
-		PVOID pTarget = FindPatternW(pBase, dwSize, i.lpcwszSignature);
-
-		if (pTarget != NULL)
-		{
-			if (i.OffsetType == OFF_ADD)
-				pTarget = (PVOID)((ULONG_PTR)pTarget + i.uOffset);
-			else if (i.OffsetType == OFF_SUB)
-				pTarget = (PVOID)((ULONG_PTR)pTarget - i.uOffset);
-#ifdef _DEBUG
-			pLog->Write(LOG_WF_DEBUG, L"%s = 0x%p.", i.lpcwszName, pTarget);
-#endif
-			*(PVOID*)i.pTarget = pTarget;
-		}
-		else
-		{
-#ifdef _DEBUG
-			pLog->Write(LOG_WF_ERROR, L"Couldn't find %s, aborting!", i.lpcwszName);
-#endif
-			return FALSE;
-		}
+		pTarget = i.pAddress;
+		*(PVOID*)i.pTarget = pTarget;
 	}
 
 	return TRUE;
@@ -120,17 +85,7 @@ DWORD XPIAPI InitializeXPI(__in HINSTANCE hInstance)
 #ifdef _DEBUG
 	pLog->Write(LOG_WF_DEBUG, L"Target module base = 0x%p.", pMapleBase);
 	pLog->Write(LOG_WF_DEBUG, L"Target module size = 0x%08X.", dwMapleSize);
-
-	pLog->Write(LOG_WF_DEBUG, L"Dumping MapleStory to memory...");
 #endif
-
-	if ((pMapleDump = DumpMapleStory(pMapleBase, dwMapleSize)) == NULL)
-	{
-#ifdef _DEBUG
-		pLog->Write(LOG_WF_DEBUG, L"Failed to create MapleStory dump, aborting!", pMapleBase);
-#endif
-		FreeLibraryAndExitThread(hInstance, EXIT_FAILURE);
-	}
 
 	if (!LocateFunctionSignatures(pMapleBase, dwMapleSize))
 		FreeLibraryAndExitThread(hInstance, EXIT_FAILURE);
@@ -138,7 +93,7 @@ DWORD XPIAPI InitializeXPI(__in HINSTANCE hInstance)
 	pInstances = new CInstanceManager;
 	pHookManager = new CHookManager;
 
-	foreach(const MAPLE_HOOK& i, MapleHooks)
+	for (const MAPLE_HOOK& i : MapleHooks)
 		pHookManager->Add((PVOID*)i.Function.pTarget, i.pHook);
 
 #ifdef _DEBUG
@@ -152,7 +107,6 @@ DWORD XPIAPI InitializeXPI(__in HINSTANCE hInstance)
 #endif
 
 		pStrings = new CResourceString(hInstance);
-		pPacketPool = new boost::object_pool<CMaplePacket>;
 		pOpcodeInfo = new OPCODE_MAP();
 
 		if (!LoadXPIConfig(XPI_CONFIG_FILE))
@@ -212,14 +166,10 @@ VOID XPIAPI DestroyXPI()
 	if (pStrings != NULL)
 		delete pStrings;
 
-	if (pPacketPool != NULL)
-		delete pPacketPool;
+	lPacketPool.clear();
 
 	if (pOpcodeInfo != NULL)
 		delete pOpcodeInfo;
-
-	if (pMapleDump != NULL)
-		FreeMapleStoryDump(pMapleDump);
 }
 
 BOOL APIENTRY DllMain(__in HINSTANCE hInstance, __in DWORD fdwReason, __reserved LPVOID lpReserved)

@@ -1,9 +1,8 @@
+#include "stdafx.h"
+
 #include "CMaplePacket.hpp"
-
 #define STRSAFE_NO_DEPRECATE
-
 #include <strsafe.h>
-
 #include "XPIUtilities.hpp"
 
 volatile LONG lPacketCount = 0;
@@ -25,7 +24,7 @@ VOID CMaplePacket::SetCallerTime(__out LPCALLER_TIME lpCT, __in LPVOID lpv)
 
 CMaplePacket::~CMaplePacket()
 {
-	foreach(PACKET_MEMBER i, m_dqMembers)
+	for (PACKET_MEMBER &i : m_dqMembers)
 	{
 		if (i.Type == MEMBER_STRING)
 			delete i.data.str;
@@ -44,6 +43,8 @@ CMaplePacket::CMaplePacket(__in LPCMAPLEPACKETSTRUCT lpCMaplePacketStruct)
 	m_pInstance = lpCMaplePacketStruct->pInstance;
 	m_Direction = lpCMaplePacketStruct->Direction;
 	m_ulState = lpCMaplePacketStruct->ulState;
+	m_wParam = NULL;
+	m_lParam = NULL;
 
 	InitializeCriticalSection(&m_CriticalSection);
 }
@@ -53,10 +54,10 @@ VOID CMaplePacket::CopyMembersFrom(__in CMaplePacket* pPacket)
 	if (pPacket == NULL)
 		return;
 
-	foreach(PACKET_MEMBER i, *pPacket->GetMembers())
+	for (const PACKET_MEMBER &i : *pPacket->GetMembers())
 		m_dqMembers.push_back(i);
 
-	foreach(BYTE b, *pPacket->GetData())
+	for (BYTE b : *pPacket->GetData())
 		m_vbData.push_back(b);
 }
 

@@ -1,11 +1,9 @@
 #ifndef CMAIN_WINDOW_HPP_
 #define CMAIN_WINDOW_HPP_
 
-#include <windows.h>
 #include <commctrl.h>
-
+#include <string>
 #include <vector>
-
 #include "XPIColors.h"
 
 #define WM_SHELLNOTIFY (WM_USER + 100)

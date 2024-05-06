@@ -1,16 +1,15 @@
 #ifndef CPACKET_INFO_HPP_
 #define CPACKET_INFO_HPP_
 
-#include <windows.h>
-
-#include "CMaplePacket.hpp"
 #include "CMainWindow.hpp"
+
+class CMaplePacket;
 
 // initializer structure (passed as LPARAM)
 typedef struct _PACKETINFO
 {
-	CMaplePacket* pPacket;
-	PXPIGUI       pXPIGUI;
+	CMaplePacket *pPacket;
+	PXPIGUI pXPIGUI;
 } PACKETINFO, far *LPPACKETINFO, near *PPACKETINFO;
 
 class CPacketInfo
@@ -21,7 +20,7 @@ private:
 	// XPI GUI
 	PXPIGUI       m_pXPIGUI;
 	// packet
-	CMaplePacket* m_pPacket;
+	CMaplePacket *m_pPacket;
 	// CMaplePacket wParam masks
 	enum
 	{

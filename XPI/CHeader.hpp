@@ -1,9 +1,7 @@
 #ifndef CHEADER_HPP_
 #define CHEADER_HPP_
 
-#include <windows.h>
 #include <gdiplus.h>
-
 #include <string>
 
 #define SUBTEXT_SPACING 1

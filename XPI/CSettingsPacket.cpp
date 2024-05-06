@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "CSettingsPacket.hpp"
 
 #include <windowsx.h>
@@ -108,7 +110,7 @@ BOOL CSettingsPacket::OnCreate()
 		return FALSE;
 
 	// if any opcodes have been loaded from the configuration file, add them to the list
-	foreach(OPCODE_MAP::iterator::value_type& i, *pOpcodeInfo)
+	for (OPCODE_MAP::iterator::value_type& i : *pOpcodeInfo)
 		OnUpdateOpcode(i.first);
 
 	return TRUE;
@@ -210,7 +212,7 @@ VOID CSettingsPacket::OnUpdateOpcode(__in WORD wOpcode)
 	else
 	{
 		// update an opcode
-		OPCODE_INFO* pTempOpcode = &(*pOpcodeInfo)[wOpcode];
+		OPCODE_INFO *pTempOpcode = &(*pOpcodeInfo)[wOpcode];
 		if (pTempOpcode == NULL)
 			return;
 
@@ -603,7 +605,7 @@ VOID CSettingsPacket::ListviewRightClick(__in LPNMITEMACTIVATE lpnmia)
 		case IDM_IGNORE:
 			if (vwSelected.size() > 1)
 			{
-				foreach(WORD& wOpcode, vwSelected)
+				for (WORD& wOpcode : vwSelected)
 				{
 					(*pOpcodeInfo)[wOpcode].bIgnore = !bAllIgnored;
 					OnUpdateOpcode(wOpcode);
@@ -619,7 +621,7 @@ VOID CSettingsPacket::ListviewRightClick(__in LPNMITEMACTIVATE lpnmia)
 		case IDM_BLOCK:
 			if (vwSelected.size() > 1)
 			{
-				foreach(WORD& wOpcode, vwSelected)
+				for (WORD& wOpcode : vwSelected)
 				{
 					(*pOpcodeInfo)[wOpcode].bBlock = !bAllBlocked;
 					if (!bAllBlocked)
@@ -639,7 +641,7 @@ VOID CSettingsPacket::ListviewRightClick(__in LPNMITEMACTIVATE lpnmia)
 
 		default:
 			if (ulMenuSelection >= IDM_COLOR && ulMenuSelection < IDM_COLOR + _countof(g_XPIColors))
-				foreach(WORD& wOpcode, vwSelected)
+				for (WORD& wOpcode : vwSelected)
 				(*pOpcodeInfo)[wOpcode].crColor = g_XPIColors[ulMenuSelection - IDM_COLOR].crColor;
 			break;
 		}

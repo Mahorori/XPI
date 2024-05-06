@@ -1,4 +1,10 @@
+#include "stdafx.h"
+
 #include "CHookManager.hpp"
+#include "XPIUtilities.hpp"
+
+#include <detours.h>
+#pragma comment(lib, "detours.lib")
 
 CHookManager::CHookManager()
 {
@@ -10,7 +16,7 @@ CHookManager::~CHookManager()
 	Disable();
 }
 
-VOID CHookManager::Add(__in PVOID* ppv, __in PVOID pDetour)
+VOID CHookManager::Add(__in PVOID *ppv, __in PVOID pDetour)
 {
 	m_Hooks[ppv] = pDetour;
 
@@ -18,7 +24,7 @@ VOID CHookManager::Add(__in PVOID* ppv, __in PVOID pDetour)
 		Install();
 }
 
-VOID CHookManager::Remove(__in PVOID* ppv)
+VOID CHookManager::Remove(__in PVOID *ppv)
 {
 	m_Hooks.erase(ppv);
 
@@ -28,8 +34,7 @@ VOID CHookManager::Remove(__in PVOID* ppv)
 
 BOOL CHookManager::Set(__in BOOL bInstall)
 {
-	DETOUR_FUNC DetourSet;
-	LONG        lError = NO_ERROR;
+	LONG lError = NO_ERROR;
 
 	if (m_bEnabled == bInstall || m_Hooks.empty())
 		return FALSE;
@@ -37,13 +42,14 @@ BOOL CHookManager::Set(__in BOOL bInstall)
 	if (DetourTransactionBegin() != NO_ERROR)
 		return FALSE;
 
-	DetourSet = bInstall ? DetourAttach : DetourDetach;
-
 	if (DetourUpdateThread(GetCurrentThread()) == NO_ERROR)
 	{
-		foreach(HOOK_MAP::iterator::value_type& i, m_Hooks)
+		for(HOOK_MAP::iterator::value_type& i : m_Hooks)
 		{
-			lError = DetourSet(i.first, i.second);
+			if (bInstall)
+				lError = DetourAttach(i.first, i.second);
+			else
+				lError = DetourDetach(i.first, i.second);
 			if (lError != NO_ERROR)
 				break;
 		}

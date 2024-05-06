@@ -1,7 +1,10 @@
+#include "stdafx.h"
+
 #include "CHeader.hpp"
 
 #include <uxtheme.h>
 #include <vssym32.h>
+#include <stdexcept>
 
 #pragma comment(lib, "gdiplus")
 

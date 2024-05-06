@@ -1,10 +1,6 @@
 #ifndef CMAPLE_PACKET_HPP_
 #define CMAPLE_PACKET_HPP_
 
-#include <windows.h>
-
-#include <boost/pool/pool_alloc.hpp>
-
 #include <string>
 #include <vector>
 #include <deque>
@@ -49,12 +45,12 @@ typedef struct _PACKET_MEMBER
 	} data;
 } PACKET_MEMBER, far *LPPACKET_MEMBER, near *PPACKET_MEMBER;
 
-typedef std::deque<PACKET_MEMBER, boost::fast_pool_allocator<PACKET_MEMBER> > PACKET_MEMBERS;
+typedef std::deque<PACKET_MEMBER> PACKET_MEMBERS;
 
 #define PACKET_INJECTED 0x1
 #define PACKET_LOOPBACK 0x2
 #define PACKET_BLOCKED  0x4
-#define PACKET_WORLD	0x8
+#define PACKET_CHAT	0x8
 
 typedef struct _CMAPLEPACKETSTRUCT
 {

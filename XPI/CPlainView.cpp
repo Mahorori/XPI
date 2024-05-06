@@ -1,11 +1,12 @@
+#include "stdafx.h"
+
 #include "CPlainView.hpp"
 
 #include <uxtheme.h>
 #include <windowsx.h>
 #define STRSAFE_NO_DEPRECATE
 #include <strsafe.h>
-
-#include <boost/scoped_array.hpp>
+#include <intrin.h> // _ReturnAddress
 
 #include "CResourceString.hpp"
 #include "CInstanceManager.hpp"
@@ -13,8 +14,10 @@
 #include "CSpamPacket.hpp"
 #include "XPIUtilities.hpp"
 #include "extvars.hpp"
-#include "MapleHooks.h"
 #include "resource.h"
+#include "CInPacket.hpp"
+#include "COutPacket.hpp"
+#include "CClientSocket.hpp"
 
 CPlainView::CPlainView(__in HWND hDialog, __in PXPIGUI pXPIGUI)
 {
@@ -82,7 +85,7 @@ BOOL CPlainView::OnCreate()
 	std::wstring wstrTemp;
 
 	// SECOND COLUMN
-	// - type
+	// - socket
 	wstrTemp = pStrings->Get(IDS_TYPE);
 	/***/
 	lvc.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT;
@@ -172,7 +175,7 @@ VOID CPlainView::CopyPackets(__in BOOL bHeaders)
 	CHAR szTemp[(sizeof(UINT) * 2) + 1];
 
 	// form string
-	foreach(CMaplePacket* pPacket, vPackets)
+	for (CMaplePacket* pPacket : vPackets)
 	{
 		if (bHeaders) // show packet headers (direction + size)
 		{
@@ -184,7 +187,7 @@ VOID CPlainView::CopyPackets(__in BOOL bHeaders)
 		}
 
 		// packet bytes
-		foreach(BYTE b, *pPacket->GetData())
+		for (BYTE b : *pPacket->GetData())
 			if (SUCCEEDED(StringCchPrintfA(szTemp, _countof(szTemp), "%02X ", b)))
 				strBuffer += szTemp;
 
@@ -317,7 +320,7 @@ VOID CPlainView::ListviewDoubleClick(__in LPNMITEMACTIVATE lpnmia)
 
 	if (pPacket->GetLParam()) // ASCII mode
 	{
-		foreach(BYTE b, *pPacket->GetData())
+		for (BYTE b : *pPacket->GetData())
 		{
 			wstrBuffer += isgraph((CHAR)b) == 0 && b != ' ' ? L'.' : b;
 			wstrBuffer += L" ";
@@ -327,7 +330,7 @@ VOID CPlainView::ListviewDoubleClick(__in LPNMITEMACTIVATE lpnmia)
 	{
 		WCHAR wszTemp[16];
 
-		foreach(BYTE b, *pPacket->GetData())
+		for (BYTE b : *pPacket->GetData())
 			if (SUCCEEDED(StringCchPrintfW(wszTemp, _countof(wszTemp), L"%02X ", b)))
 				wstrBuffer += wszTemp;
 	}
@@ -455,7 +458,7 @@ INT_PTR CALLBACK CPlainView::MaskedEdit(__in HWND hEdit, __in UINT uMessage, __i
 	case WM_KEYDOWN:
 		if (wParam == VK_RETURN)
 		{
-			CPlainView* pPlainView = GetClassInstance<CPlainView>(GetParent(GetParent(hEdit)));
+			CPlainView *pPlainView = GetClassInstance<CPlainView>(GetParent(GetParent(hEdit)));
 
 			if (pPlainView != NULL)
 				pPlainView->OnInjectClick();
@@ -469,7 +472,7 @@ INT_PTR CALLBACK CPlainView::MaskedEdit(__in HWND hEdit, __in UINT uMessage, __i
 		}
 		else if (wParam == VK_DOWN)
 		{
-			CPlainView* pPlainView = GetClassInstance<CPlainView>(GetParent(GetParent(hEdit)));
+			CPlainView *pPlainView = GetClassInstance<CPlainView>(GetParent(GetParent(hEdit)));
 
 			if (pPlainView != NULL)
 				pPlainView->ScrollCombo(-1);
@@ -513,7 +516,6 @@ VOID CPlainView::OnInjectClick()
 		return;
 
 	INT nLength = ComboBox_GetTextLength(hCombo);
-
 	if (nLength <= 0)
 	{
 		HWND hComboEdit = FindWindowEx(hCombo, NULL, L"Edit", NULL);
@@ -536,15 +538,15 @@ VOID CPlainView::OnInjectClick()
 		return;
 	}
 
-	boost::scoped_array<WCHAR> wszBuffer(new WCHAR[nLength + 1]);
+	std::wstring wstr(nLength + 1, 0);
 
 	// NOTE: no need to check this since we already do so with ComboBox_GetTextLength
-	ComboBox_GetText(hCombo, wszBuffer.get(), nLength + 1);
+	ComboBox_GetText(hCombo, &wstr[0], nLength + 1);
 
 	// convert string to byte array
 	std::vector<BYTE> vbData;
 
-	if (!StringToBuffer(wszBuffer.get(), &vbData))
+	if (!StringToBuffer(wstr, &vbData))
 	{
 		HWND hComboEdit = FindWindowEx(hCombo, NULL, L"Edit", NULL);
 
@@ -589,62 +591,59 @@ VOID CPlainView::OnInjectClick()
 		return;
 	}
 
-	CMAPLEPACKETSTRUCT  cmps;
-	COutPacket          oPacket;
+	CMAPLEPACKETSTRUCT cmps;
+	COutPacket oPacket(*(WORD*)&vbData[0]);
 
 	cmps.pInstance = &oPacket;
 	cmps.Direction = PACKET_SEND;
 	cmps.ulState = PACKET_INJECTED;
 	cmps.lpv = _ReturnAddress();
 
-	pInstances->Add(&oPacket, pPacketPool->construct(&cmps));
-
-	// initialize packet with opcode
-	_COutPacket(&oPacket, 0, *(WORD*)&vbData[0]);
+	pInstances->Add(&oPacket, std::make_shared<CMaplePacket>(&cmps));
 
 	// encode rest of bytes if it has more than just an op-code
 	if (vbData.size() > sizeof(WORD))
-		EncodeBuffer(&oPacket, 0, &vbData[0] + sizeof(WORD), vbData.size() - sizeof(WORD));
+		EncodeBuffer_Hook(&oPacket, 0, &vbData[0] + sizeof(WORD), vbData.size() - sizeof(WORD));
 
 	if (m_InjectDirection == PACKET_SEND)
-		SendPacket(pClientSocket, 0, &oPacket); // inject packet
+	{
+		// diff thread (SendMessage)
+		CClientSocket::GetInstance()->SendPacket(&oPacket);
+	}
 	else
 	{
-		CMAPLEPACKETSTRUCT  cmps;
-		CInPacket           inPacket = { 0 };
+		CMAPLEPACKETSTRUCT cmps;
+		CInPacket iPacket = { 0 };
 
 		// copy ZArray members from constructed packet to CInPacket structure
-		inPacket.m_aRecvBuff = oPacket.m_aSendBuff;
-		inPacket.m_uLength = oPacket.m_uLength;
-		inPacket.m_nState = RS_COMPLETED;
-		inPacket.m_uDataLen = oPacket.m_uDataLen;
+		iPacket.m_aRecvBuff = oPacket.m_aSendBuff;
+		iPacket.m_uLength = oPacket.m_uOffset;
+		iPacket.m_nState = RS_COMPLETED;
+		iPacket.m_uDataLen = oPacket.m_uOffset;
 
-		cmps.pInstance = &inPacket;
+		cmps.pInstance = &iPacket;
 		cmps.Direction = PACKET_RECV;
 		cmps.ulState = PACKET_INJECTED;
 		cmps.lpv = _ReturnAddress();
 
-		pInstances->Add(&inPacket, pPacketPool->construct(&cmps));
+		pInstances->Add(&iPacket, std::make_shared<CMaplePacket>(&cmps));
 
-		// inject packet
-		_ProcessPacket(pClientSocket, 0, &inPacket);
+		// same thread
+		CClientSocket::GetInstance()->ProcessPacket(&iPacket);
 
-		pInstances->Remove(&inPacket);
+		pInstances->Remove(&iPacket);
 	}
 
 	pInstances->Remove(&oPacket);
 
-	// free ZArray buffer
-	_RemoveAll(&oPacket.m_aSendBuff, 0);
-
 	// add text to scroll-back log
-	AddToScrollBack(wszBuffer.get(), m_InjectDirection);
+	AddToScrollBack(wstr.c_str(), m_InjectDirection);
 
 	// clear control
 	ComboBox_SetText(hCombo, NULL);
 }
 
-VOID CPlainView::OnAddPacket(__inout CMaplePacket* pPacket)
+VOID CPlainView::OnAddPacket(__inout CMaplePacket *pPacket)
 {
 	if (pPacket == NULL)
 		return;
@@ -657,9 +656,6 @@ VOID CPlainView::OnAddPacket(__inout CMaplePacket* pPacket)
 
 	if ((*pOpcodeInfo)[pPacket->GetOpcode()].bIgnore && !(pPacket->GetState() & PACKET_INJECTED))
 		return;
-
-	pPacket->SetLParam(FALSE); // set initial state to HEX mode
-	pPacket->SetWParam(0); // set initial state
 
 	LVITEM  lvi;
 	HWND    hListview = GetDlgItem(m_hDialog, IDC_PLAINLIST);
@@ -679,10 +675,10 @@ VOID CPlainView::OnAddPacket(__inout CMaplePacket* pPacket)
 		return;
 
 	// SECOND COLUMN
-	// - type
+	// - socket
 	WCHAR wszTemp[9];
 
-	StringCchPrintfW(wszTemp, _countof(wszTemp), pPacket->GetState() & PACKET_WORLD ? pStrings->Get(IDS_WORLD).c_str() : pStrings->Get(IDS_CHANNEL).c_str());
+	StringCchPrintfW(wszTemp, _countof(wszTemp), pPacket->GetState() & PACKET_CHAT ? pStrings->Get(IDS_WORLD).c_str() : pStrings->Get(IDS_CHANNEL).c_str());
 
 	lvi.pszText = wszTemp;
 	lvi.mask = LVIF_TEXT;
@@ -707,7 +703,7 @@ VOID CPlainView::OnAddPacket(__inout CMaplePacket* pPacket)
 	// - data
 	std::wstring wstrBuffer;
 
-	foreach(BYTE b, *pPacket->GetData())
+	for (BYTE b : *pPacket->GetData())
 		if (SUCCEEDED(StringCchPrintfW(wszTemp, _countof(wszTemp), L"%02X ", b)))
 			wstrBuffer += wszTemp;
 

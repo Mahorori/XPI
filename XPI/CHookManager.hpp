@@ -1,20 +1,9 @@
 #ifndef CHOOK_MANAGER_HPP_
 #define CHOOK_MANAGER_HPP_
 
-#include <windows.h>
-
 #include <map>
-#include <boost/foreach.hpp>
 
-#include <detours.h>
-
-#pragma  comment(lib, "detours")
-
-#ifndef foreach
-#define foreach BOOST_FOREACH
-#endif
-
-typedef LONG(WINAPI * DETOUR_FUNC)(__in PVOID* ppv, __in PVOID pDetour);
+typedef LONG(WINAPI * DETOUR_FUNC)(__in PVOID *ppv, __in PVOID pDetour);
 typedef std::map<PVOID*, PVOID> HOOK_MAP;
 
 class CHookManager
@@ -26,8 +15,8 @@ private:
 public:
 	CHookManager();
 	~CHookManager();
-	VOID Add(__in PVOID* ppv, __in PVOID pDetour);
-	VOID Remove(__in PVOID* ppv);
+	VOID Add(__in PVOID *ppv, __in PVOID pDetour);
+	VOID Remove(__in PVOID *ppv);
 	BOOL Install();
 	BOOL Disable();
 };

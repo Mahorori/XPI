@@ -1,8 +1,6 @@
 #ifndef XPI_COLORS_H_
 #define XPI_COLORS_H_
 
-#include <windows.h>
-
 typedef struct _XPI_COLOR_INFO
 {
 	// resource identifier

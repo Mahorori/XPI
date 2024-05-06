@@ -1,11 +1,11 @@
+#include "stdafx.h"
+
 #include "XPIConfig.h"
 
 #include <xmllite.h>
 #include <shlwapi.h>
 #define STRSAFE_NO_DEPRECATE
 #include <strsafe.h>
-
-#include <boost/scoped_array.hpp>
 
 #include "CResourceString.hpp"
 #include "XPIColors.h"
@@ -205,10 +205,10 @@ VOID WriteOpcodeEntry(__in IXmlWriter* pWriter, __in WORD wOpcode, __in BOOL bIg
 			{
 				size_t cch;
 				StringCchLength(pStrings->Get(g_XPIColors[i].wName).c_str(), 1024, &cch);
-				boost::scoped_array<WCHAR> lpwszColor(new WCHAR[cch + 1]);
-				StringCchCopyW(lpwszColor.get(), cch + 1, pStrings->Get(g_XPIColors[i].wName).c_str());
-				CharLowerBuffW(lpwszColor.get(), cch + 1);
-				pWriter->WriteString(lpwszColor.get());
+				std::wstring wstr(cch + 1, 0);
+				StringCchCopyW(&wstr[0], cch + 1, pStrings->Get(g_XPIColors[i].wName).c_str());
+				CharLowerBuffW(&wstr[0], cch + 1);
+				pWriter->WriteString(wstr.c_str());
 				break;
 			}
 		}
@@ -249,7 +249,7 @@ BOOL SaveXPIConfig(__in_z LPCWSTR lpcwszFile)
 	pWriter->WriteString(bAutoscroll ? L"true" : L"false");
 	pWriter->WriteEndElement();
 
-	foreach(OPCODE_MAP::iterator::value_type& i, *pOpcodeInfo)
+	for (const OPCODE_MAP::iterator::value_type& i : *pOpcodeInfo)
 		WriteOpcodeEntry(pWriter, i.first, i.second.bIgnore, i.second.bBlock, i.second.wszAlias, i.second.wszComment, i.second.crColor);
 
 	pWriter->WriteEndElement();

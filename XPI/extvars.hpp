@@ -1,17 +1,13 @@
 #ifndef EXT_VARS_HPP_
 #define EXT_VARS_HPP_
 
-#include <Windows.h> // ensure keywords are defined
-
-#include <boost/pool/object_pool.hpp>
-
+#include <list>
 #include <map>
+#include <memory>
 
 // opcode specs
 #define OP_ALIAS_MAXCC        17
 #define OP_COMMENT_MAXCC      100
-//
-#define Padding(x) struct { unsigned char __padding##x[(x)]; };
 
 struct OPCODE_INFO
 {
@@ -32,23 +28,23 @@ class CHookManager;
 class CMaplePacket;
 //
 struct CClientSocket;
-struct CWorldSocket;
+struct CChatSocket;
 
-extern CResourceString*   pStrings;
+extern CResourceString *pStrings;
 #ifdef _DEBUG
-extern CLog*              pLog;
+extern CLog *pLog;
 #endif
-extern CInstanceManager*  pInstances;
-extern CHookManager*      pHookManager;
-extern OPCODE_MAP*        pOpcodeInfo;
-extern CClientSocket*     pClientSocket;
-extern CWorldSocket*	  pWorldSocket;
-extern BOOL               bLogging;
-extern BOOL               bAutoscroll;
-extern PVOID              pMapleDump;
-extern PVOID              pMapleBase;
-extern DWORD              dwMapleSize;
+extern CInstanceManager *pInstances;
+extern CHookManager *pHookManager;
+extern OPCODE_MAP *pOpcodeInfo;
+extern CChatSocket *pChatSocket;
+extern BOOL	bLogging;
+extern BOOL bAutoscroll;
+extern PVOID pMapleBase;
+extern DWORD dwMapleSize;
+extern WORD uSeqBase;
+
 /***/
-extern boost::object_pool<CMaplePacket>*  pPacketPool;
+extern std::list<std::shared_ptr<CMaplePacket>> lPacketPool;
 
 #endif // EXT_VARS_HPP_

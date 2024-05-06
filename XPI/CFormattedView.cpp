@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "CFormattedView.hpp"
 #include "CLog.hpp"
 
@@ -5,10 +7,9 @@
 #include <windowsx.h>
 #define STRSAFE_NO_DEPRECATE
 #include <strsafe.h>
+#include <intrin.h> // _ReturnAddress
 
 #include <set>
-
-#include <boost/scoped_array.hpp>
 
 #include "FormattedInject.hpp"
 #include "CResourceString.hpp"
@@ -17,8 +18,10 @@
 #include "CSpamPacket.hpp"
 #include "XPIUtilities.hpp"
 #include "extvars.hpp"
-#include "MapleHooks.h"
 #include "resource.h"
+#include "CInPacket.hpp"
+#include "COutPacket.hpp"
+#include "CClientSocket.hpp"
 
 CFormattedView::CFormattedView(__in HWND hDialog, __in PXPIGUI pXPIGUI)
 {
@@ -88,7 +91,7 @@ BOOL CFormattedView::OnCreate()
 	std::wstring wstrTemp;
 
 	// SECOND COLUMN
-	// - type
+	// - socket
 	wstrTemp = pStrings->Get(IDS_TYPE);
 	/***/
 	lvc.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_FMT;
@@ -232,7 +235,7 @@ VOID CFormattedView::CopyPackets(__in BOOL bHeaders)
 	WORD  wOpcode;
 
 	// form string
-	foreach(CMaplePacket* pPacket, vPackets)
+	for (CMaplePacket* pPacket : vPackets)
 	{
 		wOpcode = pPacket->GetOpcode();
 
@@ -287,7 +290,7 @@ VOID CFormattedView::CopyPackets(__in BOOL bHeaders)
 
 			case MEMBER_BUFFER:
 				strBuffer += "[";
-				foreach(BYTE b, *pMember->data.buff)
+				for (BYTE b : *pMember->data.buff)
 				{
 					StringCchPrintfA(szTemp, _countof(szTemp), "%02X", b);
 					strBuffer += szTemp;
@@ -342,7 +345,7 @@ VOID CFormattedView::CopyPackets(__in BOOL bHeaders)
 	} while (0);
 }
 
-VOID CFormattedView::OnAddPacket(__inout CMaplePacket* pPacket)
+VOID CFormattedView::OnAddPacket(__inout CMaplePacket *pPacket)
 {
 	if (pPacket == NULL)
 		return;
@@ -355,9 +358,6 @@ VOID CFormattedView::OnAddPacket(__inout CMaplePacket* pPacket)
 
 	if ((*pOpcodeInfo)[pPacket->GetOpcode()].bIgnore && !(pPacket->GetState() & PACKET_INJECTED))
 		return;
-
-	pPacket->SetLParam(FALSE); // set initial state to HEX mode
-	pPacket->SetWParam(0); // set initial state
 
 	LVITEM  lvi;
 	HWND    hListview = GetDlgItem(m_hDialog, IDC_FORMATTEDLIST);
@@ -377,10 +377,10 @@ VOID CFormattedView::OnAddPacket(__inout CMaplePacket* pPacket)
 		return;
 
 	// SECOND COLUMN
-	// - type
+	// - socket
 	WCHAR wszTemp[OP_ALIAS_MAXCC + 1];
 
-	StringCchPrintfW(wszTemp, _countof(wszTemp), pPacket->GetState() & PACKET_WORLD ? pStrings->Get(IDS_WORLD).c_str() : pStrings->Get(IDS_CHANNEL).c_str());
+	StringCchPrintfW(wszTemp, _countof(wszTemp), pPacket->GetState() & PACKET_CHAT ? pStrings->Get(IDS_WORLD).c_str() : pStrings->Get(IDS_CHANNEL).c_str());
 
 	lvi.pszText = wszTemp;
 	lvi.mask = LVIF_TEXT;
@@ -443,7 +443,7 @@ VOID CFormattedView::OnAddPacket(__inout CMaplePacket* pPacket)
 
 			case MEMBER_BUFFER:
 				wstrBuffer += L"[";
-				foreach(BYTE b, *pMember->data.buff)
+				for(BYTE b : *pMember->data.buff)
 				{
 					StringCchPrintfW(wszTemp, _countof(wszTemp), L"%02X", b);
 					wstrBuffer += wszTemp;
@@ -659,14 +659,14 @@ VOID CFormattedView::ListviewCustomDraw(__in LPNMLVCUSTOMDRAW lpnmlvcd)
 				SetWindowLongPtr(m_hDialog, DWLP_MSGRESULT, CDRF_DODEFAULT);
 				return;
 			}
-			boost::scoped_array<WCHAR> lpwszBuffer(new WCHAR[iLength]);
-			if (MultiByteToWideChar(CP_ACP, 0, pm.data.str->c_str(), -1, lpwszBuffer.get(), iLength) == 0)
+			std::wstring wstr(iLength, 0);
+			if (MultiByteToWideChar(CP_ACP, 0, pm.data.str->c_str(), -1, &wstr[0], iLength) == 0)
 			{
 				SetWindowLongPtr(m_hDialog, DWLP_MSGRESULT, CDRF_DODEFAULT);
 				return;
 			}
 			wstrData += L"\"";
-			wstrData += lpwszBuffer.get();
+			wstrData += wstr;
 			wstrData += L"\"";
 			lpnmlvcd->clrText = MCLR_STRING;
 			break;
@@ -674,7 +674,7 @@ VOID CFormattedView::ListviewCustomDraw(__in LPNMLVCUSTOMDRAW lpnmlvcd)
 
 		case MEMBER_BUFFER:
 			wstrData += L"[";
-			foreach(BYTE b, *pm.data.buff)
+			for (BYTE b : *pm.data.buff)
 			{
 				if (FAILED(StringCchPrintfW(wszBuffer, _countof(wszBuffer), L"%02X", b)))
 				{
@@ -951,7 +951,7 @@ VOID CFormattedView::ListviewRightClick(__in LPNMITEMACTIVATE lpnmia)
 		case IDM_IGNORE:
 			if (swSelected.size() > 1)
 			{
-				foreach(WORD wTemp, swSelected)
+				for (WORD wTemp : swSelected)
 				{
 					(*pOpcodeInfo)[wTemp].bIgnore = !bAllIgnored;
 					SendMessage(GetParent(m_hDialog), WM_UPDATEOPCODE, wTemp, 0);
@@ -967,7 +967,7 @@ VOID CFormattedView::ListviewRightClick(__in LPNMITEMACTIVATE lpnmia)
 		case IDM_BLOCK:
 			if (swSelected.size() > 1)
 			{
-				foreach(WORD wTemp, swSelected)
+				for (WORD wTemp : swSelected)
 				{
 					(*pOpcodeInfo)[wTemp].bBlock = !bAllBlocked;
 					if (!bAllBlocked)
@@ -1146,9 +1146,9 @@ VOID CFormattedView::AddToScrollBack(__in LPCWSTR lpcwszPacket, __in PACKET_DIRE
 	ComboBox_SetItemData(hCombo, iIndex, (LPARAM)Direction);
 }
 
-BOOL CFormattedView::InjectPacket(__in LPSTR lpszBuffer)
+BOOL CFormattedView::InjectPacket(__in LPCSTR lpszBuffer)
 {
-	COutPacket          oPacket;
+	COutPacket oPacket;
 	CMAPLEPACKETSTRUCT  cmps;
 
 	cmps.pInstance = &oPacket;
@@ -1156,7 +1156,7 @@ BOOL CFormattedView::InjectPacket(__in LPSTR lpszBuffer)
 	cmps.ulState = PACKET_INJECTED;
 	cmps.lpv = _ReturnAddress();
 
-	pInstances->Add(&oPacket, pPacketPool->construct(&cmps));
+	pInstances->Add(&oPacket, std::make_shared<CMaplePacket>(&cmps));
 
 	formatted_packet_parser parser(&oPacket, FALSE);
 
@@ -1172,28 +1172,32 @@ BOOL CFormattedView::InjectPacket(__in LPSTR lpszBuffer)
 	}
 
 	if (m_InjectDirection == PACKET_SEND)
-		SendPacket(pClientSocket, 0, &oPacket);
+	{
+		// diff thread (SendMessage)
+		CClientSocket::GetInstance()->SendPacket(&oPacket);
+	}
 	else // m_InjectDirection == PACKET_RECV
 	{
-		CInPacket inPacket = { 0 };
-		inPacket.m_aRecvBuff = oPacket.m_aSendBuff;
-		inPacket.m_uLength = oPacket.m_uLength;
-		inPacket.m_nState = RS_COMPLETED;
-		inPacket.m_uDataLen = oPacket.m_uDataLen;
+		CInPacket iPacket = { 0 };
+		iPacket.m_aRecvBuff = oPacket.m_aSendBuff;
+		iPacket.m_uLength = oPacket.m_uOffset;
+		iPacket.m_nState = RS_COMPLETED;
+		iPacket.m_uDataLen = oPacket.m_uOffset;
 
 		CMAPLEPACKETSTRUCT rcmps;
 
-		rcmps.pInstance = &inPacket;
+		rcmps.pInstance = &iPacket;
 		rcmps.Direction = PACKET_RECV;
 		rcmps.ulState = PACKET_INJECTED;
 		rcmps.lpv = _ReturnAddress();
 
-		pInstances->Add(&inPacket, pPacketPool->construct(&rcmps));
-		_ProcessPacket(pClientSocket, 0, &inPacket);
+		pInstances->Add(&iPacket, std::make_shared<CMaplePacket>(&rcmps));
+
+		// same thread
+		CClientSocket::GetInstance()->ProcessPacket(&iPacket);
 	}
 
 	pInstances->Remove(&oPacket);
-	_RemoveAll(&oPacket.m_aSendBuff, 0);
 
 	return TRUE;
 }
@@ -1231,17 +1235,16 @@ VOID CFormattedView::OnInjectClick()
 		return;
 	}
 
-	boost::scoped_array<WCHAR> wszBuffer(new WCHAR[nLength + 1]);
+	std::wstring wstr(nLength + 1, 0);
 
 	// NOTE: no need to check this since we already do so with ComboBox_GetTextLength
-	ComboBox_GetText(hCombo, wszBuffer.get(), nLength + 1);
+	ComboBox_GetText(hCombo, &wstr[0], nLength + 1);
 
-	boost::scoped_array<CHAR> szBuffer(new CHAR[nLength + 1]);
-
-	if (WideCharToMultiByte(CP_ACP, 0, wszBuffer.get(), -1, szBuffer.get(), nLength + 1, NULL, NULL) == 0)
+	std::string str(nLength + 1, 0);
+	if (WideCharToMultiByte(CP_ACP, 0, &wstr[0], -1, &str[0], nLength + 1, NULL, NULL) == 0)
 		return; // assume something went wrong and go on with silent error
 
-	if (!InjectPacket(szBuffer.get()))
+	if (!InjectPacket(str.c_str()))
 	{
 		HWND hComboEdit = FindWindowEx(hCombo, NULL, L"Edit", NULL);
 
@@ -1264,7 +1267,7 @@ VOID CFormattedView::OnInjectClick()
 	}
 
 	// add text to scroll-back log
-	AddToScrollBack(wszBuffer.get(), m_InjectDirection);
+	AddToScrollBack(wstr.c_str(), m_InjectDirection);
 
 	// clear control
 	ComboBox_SetText(hCombo, NULL);

@@ -1,8 +1,6 @@
 #ifndef CLOG_HPP_
 #define CLOG_HPP_
 
-#include <windows.h>
-
 #define LOG_BUFFER_SIZE 2000
 
 #define LOG_WF_NOPREFIX  ((DWORD)0x00000002)

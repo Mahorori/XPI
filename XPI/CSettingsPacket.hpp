@@ -1,8 +1,6 @@
 #ifndef CSETTINGS_PACKET_HPP_
 #define CSETTINGS_PACKET_HPP_
 
-#include <windows.h>
-
 #include "CMainWindow.hpp"
 #include "CHeader.hpp"
 

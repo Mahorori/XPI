@@ -1,8 +1,6 @@
 #ifndef CFORMATTED_VIEW_HPP_
 #define CFORMATTED_VIEW_HPP_
 
-#include <windows.h>
-
 #include "CMainWindow.hpp"
 #include "CMaplePacket.hpp"
 
@@ -81,7 +79,7 @@ public:
 	VOID ListviewEndEdit(__in HWND* hEdit, __in NMLVDISPINFO* lpnmlvdi);
 	VOID ListviewNotify(__in LPNMHDR lpnmhdr);
 	VOID AddToScrollBack(__in LPCWSTR lpcwszPacket, __in PACKET_DIRECTION Direction);
-	BOOL InjectPacket(__in LPSTR lpszBuffer);
+	BOOL InjectPacket(__in LPCSTR lpszBuffer);
 	VOID OnInjectReady(__in BOOL bReady);
 	VOID OnInjectClick();
 	VOID ShowInjectMenu();

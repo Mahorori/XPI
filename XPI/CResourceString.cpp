@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "CResourceString.hpp"
 
 #include <stdexcept>
